@@ -831,6 +831,11 @@ pub enum GoToDefinitionScrollStrategy {
     Minimum,
     /// Scroll so the target appears near the top of the viewport.
     Top,
+    /// Attemps to keep the cursor at the same vertical offset as it was at the
+    /// call site.
+    /// TODO!(dino): Double-check if it's the "call site" or the site where the
+    /// cursor is when the LSP response is handled.
+    Preserve,
 }
 
 /// Determines when the mouse cursor should be hidden in an editor or input box.

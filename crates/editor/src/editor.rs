@@ -18339,7 +18339,11 @@ impl Editor {
         };
         let anchor_range = range.to_anchors(&multibuffer.snapshot(cx));
         self.change_selections(
-            SelectionEffects::scroll(Autoscroll::for_go_to_definition(cx)).nav_history(true),
+            SelectionEffects::scroll(Autoscroll::for_go_to_definition(
+                self.cursor_viewport_row_offset(cx),
+                cx,
+            ))
+            .nav_history(true),
             window,
             cx,
             |s| s.select_anchor_ranges([anchor_range]),
@@ -19145,8 +19149,11 @@ impl Editor {
                         }
 
                         editor.change_selections(
-                            SelectionEffects::scroll(Autoscroll::for_go_to_definition(cx))
-                                .nav_history(true),
+                            SelectionEffects::scroll(Autoscroll::for_go_to_definition(
+                                editor.cursor_viewport_row_offset(cx),
+                                cx,
+                            ))
+                            .nav_history(true),
                             window,
                             cx,
                             |s| s.select_anchor_ranges(target_ranges),
@@ -19225,8 +19232,11 @@ impl Editor {
                                 }
 
                                 target_editor.change_selections(
-                                    SelectionEffects::scroll(Autoscroll::for_go_to_definition(cx))
-                                        .nav_history(true),
+                                    SelectionEffects::scroll(Autoscroll::for_go_to_definition(
+                                        target_editor.cursor_viewport_row_offset(cx),
+                                        cx,
+                                    ))
+                                    .nav_history(true),
                                     window,
                                     cx,
                                     |s| s.select_anchor_ranges(target_ranges),
@@ -19506,7 +19516,10 @@ impl Editor {
             let Range { start, end } = locations[destination_location_index];
 
             editor.update_in(cx, |editor, window, cx| {
-                let effects = SelectionEffects::scroll(Autoscroll::for_go_to_definition(cx));
+                let effects = SelectionEffects::scroll(Autoscroll::for_go_to_definition(
+                    editor.cursor_viewport_row_offset(cx),
+                    cx,
+                ));
 
                 editor.unfold_ranges(&[start..end], false, false, cx);
                 editor.change_selections(effects, window, cx, |s| {
@@ -26744,6 +26757,31 @@ impl Editor {
             self.needs_initial_data_update = false;
             self.update_lsp_data(None, window, cx);
             self.refresh_runnables(None, window, cx);
+        }
+    }
+
+    /// Returns the current cursor's vertical offset, in display rows,
+    /// from the top of the visible viewport. Returns `None` if the cursor
+    /// is not currently on screen.
+    pub fn cursor_viewport_row_offset(&self, cx: &mut Context<Self>) -> Option<u32> {
+        let display_map = self.display_map.update(cx, |map, cx| map.snapshot(cx));
+        let scroll_top = self.scroll_manager.scroll_position(&display_map, cx).y;
+        // TODO!: Does this work here, doesn't `Point` just return the column
+        // and row number? Don't we need the actual pixels or scroll offset like
+        // in `scroll_position`?
+        let cursor_display_row = self
+            .selections
+            .newest::<Point>(&display_map)
+            .head()
+            .to_display_point(&display_map)
+            .row()
+            .as_f64();
+        let visible = self.visible_line_count()?; // already exists
+        let offset = cursor_display_row - scroll_top;
+        if offset < 0.0 || offset >= visible as f64 {
+            None
+        } else {
+            Some(offset.floor() as u32)
         }
     }
 }

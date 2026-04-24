@@ -36,11 +36,14 @@ impl Autoscroll {
 
     /// Returns the autoscroll strategy configured for navigation to definitions
     /// and references, based on `go_to_definition_scroll_strategy`.
-    pub fn for_go_to_definition(cx: &App) -> Self {
+    pub fn for_go_to_definition(row_offset: Option<u32>, cx: &App) -> Self {
         match EditorSettings::get_global(cx).go_to_definition_scroll_strategy {
             GoToDefinitionScrollStrategy::Center => Self::center(),
             GoToDefinitionScrollStrategy::Minimum => Self::fit(),
             GoToDefinitionScrollStrategy::Top => Self::focused(),
+            GoToDefinitionScrollStrategy::Preserve => dbg!(row_offset)
+                .map(|offset| Self::top_relative(offset as usize))
+                .unwrap_or_else(Self::center),
         }
     }
 
