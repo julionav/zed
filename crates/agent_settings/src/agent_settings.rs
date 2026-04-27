@@ -168,6 +168,7 @@ pub struct AgentSettings {
     pub show_merge_conflict_indicator: bool,
     pub tool_permissions: ToolPermissions,
     pub new_thread_location: NewThreadLocation,
+    pub auto_approve_acp_permissions: bool,
 }
 
 impl AgentSettings {
@@ -672,6 +673,7 @@ impl Settings for AgentSettings {
             show_merge_conflict_indicator: agent.show_merge_conflict_indicator.unwrap(),
             tool_permissions: compile_tool_permissions(agent.tool_permissions),
             new_thread_location: agent.new_thread_location.unwrap_or_default(),
+            auto_approve_acp_permissions: agent.auto_approve_acp_permissions.unwrap_or(false),
         }
     }
 }

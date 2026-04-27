@@ -1203,6 +1203,14 @@
     //
     // Default: true
     "show_merge_conflict_indicator": true,
+    // When true, automatically respond "allow" to every
+    // `session/request_permission` request from external ACP agents,
+    // without showing the confirmation UI. Use with caution: the agent
+    // will be able to run any tool it asks for without your explicit
+    // approval. Does not affect Zed's native agent.
+    //
+    // Default: false
+    "auto_approve_acp_permissions": false,
   },
   // Whether the screen sharing icon is shown in the os status bar.
   "show_call_status_icon": true,

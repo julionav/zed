@@ -4,6 +4,7 @@ use acp_thread::{
 };
 use action_log::ActionLog;
 use agent_client_protocol::schema::{self as acp, ErrorCode};
+use agent_settings::AgentSettings;
 use agent_client_protocol::{
     Agent, Client, ConnectionTo, JsonRpcResponse, Lines, Responder, SentRequest,
 };
@@ -3196,6 +3197,37 @@ fn handle_request_permission(
         Ok(t) => t,
         Err(e) => return respond_err(responder, e),
     };
+
+    // If the user has opted in via settings, auto-respond "allow" to every
+    // permission request from external ACP agents and skip the UI entirely.
+    let auto_approve = cx.read_global(|settings_store: &settings::SettingsStore, _| {
+        settings_store
+            .get::<AgentSettings>(None)
+            .auto_approve_acp_permissions
+    });
+    if auto_approve {
+        if let Some(option) = args
+            .options
+            .iter()
+            .find(|opt| {
+                matches!(
+                    opt.kind,
+                    acp::PermissionOptionKind::AllowOnce
+                        | acp::PermissionOptionKind::AllowAlways,
+                )
+            })
+            .or_else(|| args.options.first())
+        {
+            let outcome = acp::RequestPermissionOutcome::Selected(
+                acp::SelectedPermissionOutcome::new(option.option_id.clone()),
+            );
+            responder
+                .respond(acp::RequestPermissionResponse::new(outcome))
+                .log_err();
+            return;
+        }
+        // Fall through if the agent sent no options at all.
+    }
 
     cx.spawn(async move |cx| {
         let result: Result<_, acp::Error> = async {
