@@ -237,6 +237,14 @@ pub struct AgentSettingsContent {
     /// `always_confirm`) match against the tool's text input (command, path,
     /// URL, etc.).
     pub tool_permissions: Option<ToolPermissionsContent>,
+    /// When true, automatically respond "allow" to every
+    /// `session/request_permission` request from external ACP agents,
+    /// without showing the confirmation UI. Use with caution: the agent
+    /// will be able to run any tool it asks for without your explicit
+    /// approval. Does not affect Zed's native agent.
+    ///
+    /// Default: false
+    pub auto_approve_acp_permissions: Option<bool>,
 }
 
 impl AgentSettingsContent {
